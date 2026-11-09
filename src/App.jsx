@@ -139,7 +139,7 @@ async function buildIkiFromFiles(inputFiles) {
         rgba: ctx.getImageData(0, 0, width, height).data
       });
       if (!measured) throw new Error("Layer kosong setelah pemeriksaan alpha: " + item.fileName);
-      const crop = await createImageBitmap(item.bitmap, measured.bbox.x, measured.bbox.y, measured.bbox.w, measured.bbox.h);
+      const crop = await createImageBitmap(item.bitmap, measured.bbox.x, measured.bbox.y, measured.bbox.w, measured.bbox.h, { premultiplyAlpha: "none", imageOrientation: "none" });
       for (const partId of partIdsOfRole(role)) {
         const bitmap = await createImageBitmap(crop);
         sources.push({ id: partId, bitmap, width: bitmap.width, height: bitmap.height });
@@ -255,12 +255,22 @@ export default function App() {
     let cancelled = false;
     const start = async () => {
       if (!riggedModel || !canvasRef.current) return;
+      let player;
       try {
-        const player = new IkiPlayer(canvasRef.current);
-        await player.load(loadIkiModel(JSON.stringify(riggedModel)));
+        const canvas = canvasRef.current;
+        const rect = canvas.parentElement?.getBoundingClientRect();
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.max(1, Math.floor((rect?.width || 900) * pixelRatio));
+        canvas.height = Math.max(1, Math.floor((rect?.height || 440) * pixelRatio));
+        player = new IkiPlayer(canvas);
+        const parsedModel = loadIkiModel(JSON.stringify(riggedModel));
+        const loadResult = await player.load(parsedModel);
+        if (loadResult?.failedTextures?.length) {
+          throw new Error("Texture gagal dimuat: " + loadResult.failedTextures.join(", "));
+        }
         if (cancelled) { player.destroy(); return; }
         player.start();
-        const motion = new IkiMotion(riggedModel, (id) => player.getParameter(id), (id, value) => player.setParameter(id, value));
+        const motion = new IkiMotion(parsedModel, (id) => player.getParameter(id), (id, value) => player.setParameter(id, value));
         playerRef.current = player;
         motionRef.current = motion;
         const tick = (now) => {
@@ -269,7 +279,10 @@ export default function App() {
           rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
-      } catch (err) { setError("Preview gagal dimuat: " + messageOf(err)); }
+      } catch (err) {
+        player?.destroy();
+        setError("Preview gagal dimuat: " + messageOf(err));
+      }
     };
     start();
     return () => {
