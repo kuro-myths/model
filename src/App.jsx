@@ -322,7 +322,7 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) return undefined;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data }) => setSession(data.session)).catch((err) => setAuthMessage("Session check failed: " + messageOf(err)));
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => data.subscription.unsubscribe();
   }, []);
@@ -424,27 +424,46 @@ export default function App() {
     };
   }, [riggedModel]);
 
+  const signOut = async () => {
+    try {
+      const { error: authError } = await supabase.auth.signOut();
+      if (authError) setError(authError.message);
+    } catch (err) {
+      setError(messageOf(err));
+    }
+  };
+
   const sendMagicLink = async (event) => {
     event.preventDefault();
     if (!supabase) return setAuthMessage("Supabase belum dikonfigurasi pada deployment.");
     if (!email.trim()) return setAuthMessage("Masukkan email.");
     setLibraryBusy(true); setAuthMessage("");
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin }
-    });
-    setAuthMessage(authError ? authError.message : "Link masuk dikirim. Periksa inbox email.");
-    setLibraryBusy(false);
+    try {
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin }
+      });
+      setAuthMessage(authError ? authError.message : "Link masuk dikirim. Periksa inbox email.");
+    } catch (err) {
+      setAuthMessage(messageOf(err));
+    } finally {
+      setLibraryBusy(false);
+    }
   };
 
   const loadLibrary = async () => {
     if (!supabase || !session) return;
     setLibraryBusy(true);
-    const { data, error: dbError } = await supabase.from("vtuber_models")
-      .select("id,name,prompt,created_at,model").order("created_at", { ascending: false });
-    if (dbError) setError(dbError.message);
-    else setLibrary(data || []);
-    setLibraryBusy(false);
+    try {
+      const { data, error: dbError } = await supabase.from("vtuber_models")
+        .select("id,name,prompt,created_at,model").order("created_at", { ascending: false });
+      if (dbError) setError(dbError.message);
+      else setLibrary(data || []);
+    } catch (err) {
+      setError(messageOf(err));
+    } finally {
+      setLibraryBusy(false);
+    }
   };
 
   useEffect(() => { if (session) loadLibrary(); }, [session]);
@@ -453,13 +472,18 @@ export default function App() {
     if (!supabase || !session) return setError("Masuk dengan email untuk menyimpan model ke database.");
     if (!riggedModel) return setError("Belum ada model rigged untuk disimpan.");
     setLibraryBusy(true); setError("");
-    const { error: dbError } = await supabase.from("vtuber_models").insert({
-      user_id: session.user.id, name: modelName.trim() || "Model tanpa nama",
-      prompt: prompt.trim(), model: riggedModel
-    });
-    if (dbError) setError(dbError.message);
-    else { setNotice("Model tersimpan ke Supabase."); await loadLibrary(); }
-    setLibraryBusy(false);
+    try {
+      const { error: dbError } = await supabase.from("vtuber_models").insert({
+        user_id: session.user.id, name: modelName.trim() || "Model tanpa nama",
+        prompt: prompt.trim(), model: riggedModel
+      });
+      if (dbError) setError(dbError.message);
+      else { setNotice("Model tersimpan ke Supabase."); await loadLibrary(); }
+    } catch (err) {
+      setError(messageOf(err));
+    } finally {
+      setLibraryBusy(false);
+    }
   };
 
   const exportModel = () => {
@@ -535,7 +559,7 @@ export default function App() {
           <div><div className="eyebrow">CREATOR WORKSPACE / 2D CHARACTER SYSTEM</div><h1>{tab === "create" ? "AI Character Generator" : tab === "rig" ? "Auto-Rigging Studio" : tab === "library" ? "Model Library" : "Studio Settings"}</h1></div>
           <div className="top-actions">
             <span className="status-chip"><span className="connection-dot" />{models.length ? "Router connected" : "Router setup"}</span>
-            {session ? <button className="user-chip" onClick={() => supabase.auth.signOut()}><UserRound size={15} />{session.user.email?.split("@")[0]}<LogOut size={14} /></button> : <button className="user-chip" onClick={() => setTab("library")}><UserRound size={15} />Sign in</button>}
+            {session ? <button className="user-chip" onClick={signOut}><UserRound size={15} />{session.user.email?.split("@")[0]}<LogOut size={14} /></button> : <button className="user-chip" onClick={() => setTab("library")}><UserRound size={15} />Sign in</button>}
           </div>
         </header>
 
