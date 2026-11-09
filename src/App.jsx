@@ -394,13 +394,18 @@ export default function App() {
         }
         if (cancelled) { player.destroy(); return; }
         player.start();
-        const motion = new IkiMotion(parsedModel, (id) => player.getParameter(id), (id, value) => player.setParameter(id, value));
+        const motion = new IkiMotion(
+          parsedModel,
+          (id) => manualParametersRef.current.has(id) ? manualParametersRef.current.get(id) : player.getParameter(id),
+          (id, value) => {
+            if (!manualParametersRef.current.has(id)) player.setParameter(id, value);
+          }
+        );
         playerRef.current = player;
         motionRef.current = motion;
         const tick = (now) => {
           if (cancelled) return;
           motion.update(now);
-          for (const [id, value] of manualParametersRef.current) player.setParameter(id, value);
           rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
@@ -464,8 +469,10 @@ export default function App() {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = (modelName.trim() || "character").toLowerCase().replace(/[^a-z0-9-_]+/g, "-") + ".iki";
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const openSavedModel = (item) => {
