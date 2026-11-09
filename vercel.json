@@ -5,8 +5,5 @@
   "outputDirectory": "dist",
   "functions": {
     "api/max-router.js": { "maxDuration": 60 }
-  },
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+  }
 }
