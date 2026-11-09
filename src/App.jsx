@@ -40,6 +40,132 @@ function canvasBlob(canvas) {
   });
 }
 
+async function makeDemoLayer(name, draw) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1000;
+  canvas.height = 1000;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D tidak tersedia untuk membuat demo.");
+  draw(ctx);
+  const blob = await canvasBlob(canvas);
+  return new File([blob], name + ".png", { type: "image/png" });
+}
+
+async function createDemoLayers() {
+  const skin = "#e7b69f";
+  const hair = "#29364a";
+  const ink = "#20212a";
+  const layers = [
+    ["body", (ctx) => {
+      ctx.fillStyle = "#526a7b";
+      ctx.beginPath();
+      ctx.moveTo(90, 1000);
+      ctx.lineTo(130, 870);
+      ctx.quadraticCurveTo(240, 770, 360, 770);
+      ctx.lineTo(640, 770);
+      ctx.quadraticCurveTo(760, 770, 870, 870);
+      ctx.lineTo(910, 1000);
+      ctx.closePath();
+      ctx.fill();
+    }],
+    ["face", (ctx) => {
+      ctx.fillStyle = skin;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(500, 200);
+      ctx.bezierCurveTo(620, 200, 700, 300, 700, 435);
+      ctx.bezierCurveTo(700, 590, 625, 700, 500, 760);
+      ctx.bezierCurveTo(375, 700, 300, 590, 300, 435);
+      ctx.bezierCurveTo(300, 300, 380, 200, 500, 200);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }],
+    ["eye_R", (ctx) => {
+      ctx.fillStyle = "#fff8f1";
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.ellipse(395, 433, 65, 33, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }],
+    ["eye_L", (ctx) => {
+      ctx.fillStyle = "#fff8f1";
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.ellipse(606, 433, 65, 33, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }],
+    ["iris_R", (ctx) => {
+      ctx.fillStyle = "#5d9eb2"; ctx.beginPath(); ctx.ellipse(395, 433, 29, 34, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#182a3d"; ctx.beginPath(); ctx.ellipse(395, 438, 15, 23, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(405, 420, 7, 0, Math.PI * 2); ctx.fill();
+    }],
+    ["iris_L", (ctx) => {
+      ctx.fillStyle = "#5d9eb2"; ctx.beginPath(); ctx.ellipse(606, 433, 29, 34, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#182a3d"; ctx.beginPath(); ctx.ellipse(606, 438, 15, 23, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(616, 420, 7, 0, Math.PI * 2); ctx.fill();
+    }],
+    ["lash_R", (ctx) => {
+      ctx.strokeStyle = ink; ctx.lineWidth = 8; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(330, 414); ctx.quadraticCurveTo(395, 378, 460, 414); ctx.stroke();
+    }],
+    ["lash_L", (ctx) => {
+      ctx.strokeStyle = ink; ctx.lineWidth = 8; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(541, 414); ctx.quadraticCurveTo(606, 378, 671, 414); ctx.stroke();
+    }],
+    ["brow_R", (ctx) => {
+      ctx.strokeStyle = "#5b3a39"; ctx.lineWidth = 10; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(340, 365); ctx.quadraticCurveTo(405, 330, 477, 362); ctx.stroke();
+    }],
+    ["brow_L", (ctx) => {
+      ctx.strokeStyle = "#5b3a39"; ctx.lineWidth = 10; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(524, 362); ctx.quadraticCurveTo(596, 330, 661, 365); ctx.stroke();
+    }],
+    ["mouth", (ctx) => {
+      ctx.strokeStyle = "#8d4854"; ctx.lineWidth = 8; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(465, 600); ctx.quadraticCurveTo(500, 617, 535, 600); ctx.stroke();
+    }],
+    ["mouth_open", (ctx) => {
+      ctx.fillStyle = "#713744"; ctx.beginPath(); ctx.ellipse(500, 602, 34, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e8a2a4"; ctx.beginPath(); ctx.ellipse(500, 610, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+    }],
+    ["nose", (ctx) => {
+      ctx.fillStyle = "#d18f83"; ctx.beginPath(); ctx.ellipse(500, 535, 22, 40, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#a86d68"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(488, 562); ctx.quadraticCurveTo(500, 570, 512, 562); ctx.stroke();
+    }],
+    ["hair_back", (ctx) => {
+      ctx.fillStyle = hair;
+      ctx.beginPath(); ctx.ellipse(500, 500, 310, 500, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(190, 720); ctx.quadraticCurveTo(110, 820, 90, 1000); ctx.lineTo(190, 1000); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(810, 720); ctx.quadraticCurveTo(890, 820, 910, 1000); ctx.lineTo(810, 1000); ctx.closePath(); ctx.fill();
+    }],
+    ["hair_front", (ctx) => {
+      ctx.fillStyle = "#35455e";
+      ctx.beginPath();
+      ctx.moveTo(170, 10);
+      ctx.bezierCurveTo(310, -8, 690, -8, 830, 10);
+      ctx.lineTo(762, 350);
+      ctx.lineTo(700, 360);
+      ctx.lineTo(654, 435);
+      ctx.lineTo(640, 370);
+      ctx.lineTo(360, 370);
+      ctx.lineTo(347, 435);
+      ctx.lineTo(300, 360);
+      ctx.lineTo(238, 350);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(238, 350); ctx.lineTo(347, 350); ctx.lineTo(340, 690);
+      ctx.quadraticCurveTo(320, 860, 170, 970); ctx.quadraticCurveTo(205, 700, 238, 350); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(654, 350); ctx.lineTo(762, 350); ctx.quadraticCurveTo(795, 700, 830, 970);
+      ctx.quadraticCurveTo(680, 860, 660, 690); ctx.closePath(); ctx.fill();
+    }]
+  ];
+  const files = [];
+  for (const [name, draw] of layers) files.push(await makeDemoLayer(name, draw));
+  return files;
+}
+
 async function extractPsdLayers(file) {
   const psd = readPsd(await file.arrayBuffer(), { skipLayerImageData: false, skipCompositeImageData: true });
   if (!psd.width || !psd.height || !Array.isArray(psd.children)) throw new Error("PSD tidak memiliki layer yang dapat dibaca.");
@@ -414,6 +540,12 @@ export default function App() {
             <div className="panel-head"><div><span className="eyebrow">01 / LAYER INPUT</span><h2>Import character layers</h2></div><span className="tag">IKI AUTO-RIG</span></div>
             <label className="upload-zone" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); setModelFiles(Array.from(event.dataTransfer.files || [])); setError(""); }}><input type="file" accept=".psd,image/png" multiple onChange={(event) => { setModelFiles(Array.from(event.target.files || [])); setError(""); }} /><div className="upload-icon"><Upload size={23} /></div><b>Choose layered PSD or PNG files</b><span>Drop files here or browse. PSD must contain named pixel layers.</span><small>PNG / PSD · Max 64 layers · 20 MB per PNG</small></label>
             <div className="file-list">{modelFiles.length ? modelFiles.map((file) => <div className="file-row" key={file.name}><FileImage size={16} /><span>{file.name}</span><small>{(file.size / 1024 / 1024).toFixed(1)} MB</small></div>) : <div className="muted-line">No source layers selected.</div>}</div>
+            <button className="secondary-button wide" onClick={async () => {
+              setBusy(true); setError(""); setNotice("Membuat layer demo untuk menguji pipeline Iki...");
+              try { setModelFiles(await createDemoLayers()); setNotice("15 layer demo siap. Tekan Auto-rig with Iki untuk menguji model."); }
+              catch (err) { setError(messageOf(err)); setNotice(""); }
+              finally { setBusy(false); }
+            }} disabled={busy}>Load sample character layers</button>
             <div className="required-roles"><b>Required Iki roles</b><div><code>face</code><code>eye_L</code><code>eye_R</code><code>mouth</code></div><small>Optional: hair_front, hair_back, iris_L/R, brow_L/R, nose, body, arm_L/R.</small></div>
             <button className="primary-button wide" onClick={runRigging} disabled={busy || !modelFiles.length}><Activity size={17} />{busy ? "Building rig..." : "Auto-rig with Iki"}</button>
             <div className="fine-print"><ShieldCheck size={14} />Layer diproses di browser dan tidak diunggah ke Max Router.</div>
