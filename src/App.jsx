@@ -144,21 +144,15 @@ async function createDemoLayers() {
       ctx.moveTo(170, 10);
       ctx.bezierCurveTo(310, -8, 690, -8, 830, 10);
       ctx.lineTo(762, 350);
-      ctx.lineTo(700, 360);
-      ctx.lineTo(654, 435);
-      ctx.lineTo(640, 370);
-      ctx.lineTo(360, 370);
-      ctx.lineTo(347, 435);
-      ctx.lineTo(300, 360);
       ctx.lineTo(238, 350);
       ctx.closePath();
       ctx.fill();
       ctx.beginPath();
-      ctx.moveTo(238, 350); ctx.lineTo(347, 350); ctx.lineTo(340, 690);
-      ctx.quadraticCurveTo(320, 860, 170, 970); ctx.quadraticCurveTo(205, 700, 238, 350); ctx.fill();
+      ctx.moveTo(238, 350); ctx.lineTo(347, 350); ctx.lineTo(347, 690);
+      ctx.quadraticCurveTo(320, 860, 170, 970); ctx.closePath(); ctx.fill();
       ctx.beginPath();
-      ctx.moveTo(654, 350); ctx.lineTo(762, 350); ctx.quadraticCurveTo(795, 700, 830, 970);
-      ctx.quadraticCurveTo(680, 860, 660, 690); ctx.closePath(); ctx.fill();
+      ctx.moveTo(654, 350); ctx.lineTo(762, 350); ctx.lineTo(830, 970);
+      ctx.quadraticCurveTo(680, 860, 654, 690); ctx.closePath(); ctx.fill();
     }]
   ];
   const files = [];
