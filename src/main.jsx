@@ -43,7 +43,6 @@ const showFatal = (error) => {
   ));
 };
 
-window.addEventListener("unhandledrejection", (event) => showFatal(event.reason));
 import("./App.jsx")
   .then(({ default: App }) => {
     root.render(React.createElement(BootBoundary, null, React.createElement(App)));
