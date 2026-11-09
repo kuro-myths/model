@@ -313,6 +313,8 @@ export default function App() {
   const [library, setLibrary] = useState([]);
   const [libraryBusy, setLibraryBusy] = useState(false);
   const [parameterValues, setParameterValues] = useState({});
+  const [activeExpression, setActiveExpression] = useState("");
+  const manualParametersRef = useRef(new Map());
   const canvasRef = useRef(null);
   const playerRef = useRef(null);
   const motionRef = useRef(null);
@@ -365,6 +367,8 @@ export default function App() {
     try {
       const model = await buildIkiFromFiles(modelFiles);
       setRiggedModel(model);
+      manualParametersRef.current.clear();
+      setActiveExpression("");
       setParameterValues(Object.fromEntries(model.parameters.map((parameter) => [parameter.id, parameter.default])));
       setNotice("Auto-rig selesai. Model Iki berhasil divalidasi.");
     } catch (err) { setError(messageOf(err)); setNotice(""); }
@@ -396,6 +400,7 @@ export default function App() {
         const tick = (now) => {
           if (cancelled) return;
           motion.update(now);
+          for (const [id, value] of manualParametersRef.current) player.setParameter(id, value);
           rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
@@ -464,6 +469,8 @@ export default function App() {
   };
 
   const openSavedModel = (item) => {
+    manualParametersRef.current.clear();
+    setActiveExpression("");
     setRiggedModel(item.model);
     setModelName(item.name);
     setTab("rig");
@@ -472,8 +479,31 @@ export default function App() {
 
   const setParameter = (id, value) => {
     const number = Number(value);
+    manualParametersRef.current.set(id, number);
     setParameterValues((current) => ({ ...current, [id]: number }));
     playerRef.current?.setParameter(id, number);
+  };
+
+  const playExpression = (id) => {
+    manualParametersRef.current.clear();
+    setParameterValues(Object.fromEntries((riggedModel?.parameters || []).map((parameter) => [parameter.id, parameter.default])));
+    const played = motionRef.current?.playExpression(id) || false;
+    setActiveExpression(played ? id : "");
+    if (!played) setError("Expression " + id + " tidak ditemukan pada model.");
+  };
+
+  const stopExpression = () => {
+    manualParametersRef.current.clear();
+    setParameterValues(Object.fromEntries((riggedModel?.parameters || []).map((parameter) => [parameter.id, parameter.default])));
+    motionRef.current?.stopExpression();
+    setActiveExpression("");
+  };
+
+  const resetParameters = () => {
+    manualParametersRef.current.clear();
+    const defaults = Object.fromEntries((riggedModel?.parameters || []).map((parameter) => [parameter.id, parameter.default]));
+    setParameterValues(defaults);
+    for (const [id, value] of Object.entries(defaults)) playerRef.current?.setParameter(id, value);
   };
 
   return (
@@ -548,9 +578,9 @@ export default function App() {
             <div className="panel-head"><div><span className="eyebrow">02 / LIVE PREVIEW</span><h2>Rigged character</h2></div><span className="tag">{riggedModel ? "MODEL READY" : "NO MODEL"}</span></div>
             <div className="rig-stage">{riggedModel ? <canvas ref={canvasRef} /> : <div className="empty-state"><div className="empty-icon"><Clapperboard size={28} /></div><b>Rig preview</b><span>Import role-named layers and run auto-rigging to preview the character.</span></div>}</div>
             {riggedModel && <div className="rig-controls">
-              <div className="control-head"><b>Expressions</b><span>{riggedModel.expressions?.length || 0} available</span></div>
-              <div className="expression-list">{(riggedModel.expressions || []).map((item) => <button key={item.id} onClick={() => motionRef.current?.playExpression(item.id)}>{item.id}</button>)}</div>
-              <div className="control-head"><b>Parameters</b><span>{riggedModel.parameters.length} controls</span></div>
+              <div className="control-head"><b>Expressions</b><span>{activeExpression ? "Active: " + activeExpression : (riggedModel.expressions?.length || 0) + " available"}</span></div>
+              <div className="expression-list">{(riggedModel.expressions || []).map((item) => <button key={item.id} className={activeExpression === item.id ? "selected" : ""} onClick={() => playExpression(item.id)}>{item.id}</button>)}<button onClick={stopExpression}>Stop</button></div>
+              <div className="control-head"><b>Parameters</b><button className="text-link" onClick={resetParameters}>Reset controls</button></div>
               <div className="parameter-list">{riggedModel.parameters.slice(0, 12).map((parameter) => <label key={parameter.id}><span>{parameter.name || parameter.id}</span><input type="range" min={parameter.min} max={parameter.max} step="0.01" value={parameterValues[parameter.id] ?? parameter.default} onChange={(event) => setParameter(parameter.id, event.target.value)} /></label>)}</div>
             </div>}
             {riggedModel && <div className="export-row"><input value={modelName} onChange={(event) => setModelName(event.target.value)} aria-label="Model name" /><button className="secondary-button" onClick={exportModel}><Download size={15} />Export .iki</button><button className="primary-button" onClick={saveModel} disabled={libraryBusy}><Save size={15} />Save</button></div>}
